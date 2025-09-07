@@ -61,6 +61,7 @@ export interface TripPlan {
 function normalizeStop(raw: any): TransitStop {
   const geographic = raw.centre?.geographic || raw.geographic || { latitude: 0, longitude: 0 };
   const direct = raw.distances?.direct ?? undefined;
+  // Estimate walking distance as 25% longer than direct distance
   const walking = direct !== undefined ? Math.round(direct * 1.25) : undefined;
   return {
     key: Number(raw.key),
