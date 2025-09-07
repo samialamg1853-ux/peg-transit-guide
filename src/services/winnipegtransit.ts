@@ -47,6 +47,7 @@ export interface StopSchedule {
 function normalizeStop(raw: any): TransitStop {
   const geographic = raw.centre?.geographic || raw.geographic || { latitude: 0, longitude: 0 };
   const direct = raw.distances?.direct ?? undefined;
+  const walking = direct !== undefined ? Math.round(direct * 1.25) : undefined;
   return {
     key: Number(raw.key),
     name: raw.name,
@@ -57,7 +58,7 @@ function normalizeStop(raw: any): TransitStop {
       latitude: Number(geographic.latitude),
       longitude: Number(geographic.longitude),
     },
-    distances: direct !== undefined ? { direct, walking: direct ? Math.round(direct * 1.25) : undefined } : undefined,
+    distances: direct !== undefined ? { direct, walking } : undefined,
   };
 }
 
