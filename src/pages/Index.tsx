@@ -3,6 +3,7 @@ import { TransitMap } from '@/components/TransitMap';
 import { StopSchedule } from '@/components/StopSchedule';
 import { StopSearch } from '@/components/StopSearch';
 import { FavoriteStops } from '@/components/FavoriteStops';
+import { FavoriteBar } from '@/components/FavoriteBar';
 import { TripPlanner } from '@/components/TripPlanner';
 import { TripPlan } from '@/services/winnipegtransit';
 import { TransitStop } from '@/services/winnipegtransit';
@@ -66,6 +67,7 @@ const Index = () => {
             </div>
           </div>
       </header>
+      <FavoriteBar onStopSelect={handleStopSelect} />
 
       <div className="container mx-auto p-4 max-w-7xl">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-120px)]">
