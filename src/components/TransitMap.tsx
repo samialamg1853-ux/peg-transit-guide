@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import { TransitStop, winnipegTransitAPI } from '@/services/winnipegtransit';
 import { Button } from '@/components/ui/button';
 import { MapPin, Navigation } from 'lucide-react';
+import { toastError } from '@/hooks/use-toast';
 
 // Fix default marker icons
 // @ts-expect-error Leaflet's typings omit this method
@@ -129,7 +130,10 @@ export function TransitMap({
   // Locate user and fetch nearby stops
   const locateUser = () => {
     if (!mapRef.current) return;
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) {
+      toastError('Geolocation is not supported by your browser.');
+      return;
+    }
 
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
@@ -148,7 +152,14 @@ export function TransitMap({
         await loadNearbyStops(latitude, longitude, 1000);
       },
       (err) => {
-        console.warn('Geolocation error', err);
+        if (err.code === err.PERMISSION_DENIED) {
+          toastError(
+            'Location access was denied. Please enable location permissions in your browser settings.',
+            'Permission Denied'
+          );
+        } else {
+          toastError(err.message || 'Failed to retrieve your location.', 'Geolocation Error');
+        }
       },
       { enableHighAccuracy: true }
     );
