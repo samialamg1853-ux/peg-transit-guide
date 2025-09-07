@@ -104,7 +104,7 @@ export function StopSearch({ onStopSelect, className }: StopSearchProps) {
             placeholder="Search stops by name or number..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="pl-10 pr-4 shadow-card"
+            className="pl-10 pr-4 shadow-card rounded-xl bg-background/50 backdrop-blur"
             onFocus={() => {
               if (results.length > 0) setShowResults(true);
             }}
@@ -116,7 +116,7 @@ export function StopSearch({ onStopSelect, className }: StopSearchProps) {
             placeholder="Filter by route number (optional)"
             value={route}
             onChange={(e) => setRoute(e.target.value)}
-            className="pl-10 pr-4 shadow-card"
+            className="pl-10 pr-4 shadow-card rounded-xl bg-background/50 backdrop-blur"
           />
         </div>
       </div>
