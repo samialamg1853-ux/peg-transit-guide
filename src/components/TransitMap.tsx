@@ -209,19 +209,19 @@ export function TransitMap({
 
   return (
     <div className={`relative ${className ?? ''}`}>
-      <div ref={mapContainerRef} className="w-full h-full min-h-[400px] rounded-lg" />
+      <div ref={mapContainerRef} className="w-full h-full min-h-[400px] rounded-xl overflow-hidden shadow-card" />
       <div className="absolute top-4 right-4 z-[1000]">
         <Button
           onClick={locateUser}
           size="sm"
           variant="secondary"
-          className="shadow-card bg-card/90 backdrop-blur-sm hover:bg-card"
+          className="shadow-card bg-card/80 backdrop-blur-md hover:bg-card"
         >
           <Navigation className="w-4 h-4" />
         </Button>
       </div>
       <div className="absolute bottom-4 left-4 z-[1000] pointer-events-none">
-        <div className="flex items-center gap-2 bg-background/80 backdrop-blur-sm px-3 py-2 rounded-md shadow-card">
+        <div className="flex items-center gap-2 bg-background/60 backdrop-blur-md px-3 py-2 rounded-md shadow-card">
           <MapPin className="w-4 h-4 text-primary" />
           <span className="text-xs text-muted-foreground">Tap a stop to view schedule</span>
         </div>

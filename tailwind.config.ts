@@ -89,12 +89,13 @@ export default {
       transitionProperty: {
         "smooth": "var(--transition-smooth)",
       },
-      borderRadius: {
-        xl: "var(--radius)",
-        lg: "calc(var(--radius) - 2px)",
-        md: "calc(var(--radius) - 4px)",
-        sm: "calc(var(--radius) - 6px)",
-      },
+        borderRadius: {
+          DEFAULT: "var(--radius)",
+          xl: "var(--radius)",
+          lg: "calc(var(--radius) - 2px)",
+          md: "calc(var(--radius) - 4px)",
+          sm: "calc(var(--radius) - 6px)",
+        },
       keyframes: {
         "accordion-down": {
           from: {
