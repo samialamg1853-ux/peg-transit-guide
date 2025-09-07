@@ -114,6 +114,9 @@ export function StopSchedule({ stop, onClose }: StopScheduleProps) {
     );
   }
 
+  const routeSchedules = Array.isArray(schedule["route-schedules"]) ? schedule["route-schedules"] : [];
+  const hasRouteSchedules = Array.isArray(schedule["route-schedules"]);
+
   return (
     <Card className="w-full max-w-md shadow-card bg-gradient-card">
       <CardHeader className="pb-3">
@@ -160,15 +163,19 @@ export function StopSchedule({ stop, onClose }: StopScheduleProps) {
           Refresh
         </Button>
       </CardHeader>
-      
+
       <CardContent className="pt-0">
-        {schedule["route-schedules"].length === 0 ? (
+        {!hasRouteSchedules ? (
+          <p className="text-muted-foreground text-center py-4">
+            Schedule information unavailable
+          </p>
+        ) : routeSchedules.length === 0 ? (
           <p className="text-muted-foreground text-center py-4">
             No buses scheduled at this time
           </p>
         ) : (
           <div className="space-y-4">
-            {schedule["route-schedules"].map((route: any) => {
+            {routeSchedules.map((route: any) => {
               const badgeStyle = route.badge_style || route["badge-style"] || {};
               const badgeBg = badgeStyle["background-color"] || 'hsl(var(--primary))';
               const badgeColor = badgeStyle.color || 'hsl(var(--primary-foreground))';
