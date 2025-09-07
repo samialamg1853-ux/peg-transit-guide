@@ -10,6 +10,7 @@ import { Bus, MapPin, Clock, Navigation, Search } from 'lucide-react';
 const Index = () => {
   const [selectedStop, setSelectedStop] = useState<TransitStop | null>(null);
   const [showSchedule, setShowSchedule] = useState(false);
+  const [locateUser, setLocateUser] = useState<() => void>(() => {});
 
   const handleStopSelect = (stop: TransitStop) => {
     setSelectedStop(stop);
@@ -36,10 +37,11 @@ const Index = () => {
                 <p className="text-primary-foreground/80 text-sm">Live bus schedules & navigation</p>
               </div>
             </div>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               className="text-primary-foreground hover:bg-primary-foreground/20"
+              onClick={locateUser}
             >
               <Navigation className="w-4 h-4" />
             </Button>
@@ -115,10 +117,11 @@ const Index = () => {
           <div className="lg:col-span-2">
             <Card className="shadow-card h-full">
               <CardContent className="p-0 h-full">
-                <TransitMap 
+                <TransitMap
                   onStopSelect={handleStopSelect}
                   selectedStop={selectedStop || undefined}
                   className="h-full min-h-[400px] lg:min-h-full"
+                  onLocateUser={setLocateUser}
                 />
               </CardContent>
             </Card>
