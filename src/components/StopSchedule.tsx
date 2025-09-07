@@ -120,7 +120,7 @@ export function StopSchedule({ stop, onClose }: StopScheduleProps) {
   const routeSchedules = Array.isArray(schedule["route-schedules"]) ? schedule["route-schedules"] : [];
 
   return (
-    <Card className="w-full max-w-md shadow-card bg-gradient-card">
+    <Card className="w-full max-w-md shadow-card">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div>
