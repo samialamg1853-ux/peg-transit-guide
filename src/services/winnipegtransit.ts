@@ -43,6 +43,20 @@ export interface StopSchedule {
   stop: TransitStop;
   "route-schedules": RouteSchedule[];
 }
+
+export interface TripSegment {
+  type: string;
+  route?: { number: string; name: string };
+  from?: { name?: string };
+  to?: { name?: string };
+  times?: { start?: string; end?: string; departure?: string; arrival?: string };
+  shape?: { points?: string };
+  path?: [number, number][];
+}
+
+export interface TripPlan {
+  segments: TripSegment[];
+}
 // Helper to normalize API stop shape into our TransitStop
 function normalizeStop(raw: any): TransitStop {
   const geographic = raw.centre?.geographic || raw.geographic || { latitude: 0, longitude: 0 };
@@ -128,6 +142,37 @@ export const winnipegTransitAPI = {
     }
   },
 
+  // Plan trip between two stops
+  async planTrip(originId: number, destId: number): Promise<TripPlan | null> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/trips.json?origin=${originId}&destination=${destId}&api-key=${API_KEY}`);
+      const data = await response.json();
+      const trip = data.trips?.[0];
+      if (!trip) return null;
+      const segments: TripSegment[] = (trip.segments || []).map((seg: any) => {
+        const pts: string | undefined = seg.shape?.points;
+        const path = pts
+          ? pts.trim().split(/\s+/).map((p: string) => {
+              const [lon, lat] = p.split(',').map(Number);
+              return [lat, lon] as [number, number];
+            })
+          : [];
+        return {
+          type: seg.type,
+          route: seg.route,
+          from: seg.from,
+          to: seg.to,
+          times: { start: seg.times?.start || seg.times?.departure, end: seg.times?.end || seg.times?.arrival },
+          shape: seg.shape,
+          path,
+        } as TripSegment;
+      });
+      return { segments };
+    } catch (error) {
+      console.error('Error planning trip:', error);
+      return null;
+    }
+  },
   // Get stop information by ID
   async getStop(stopId: number): Promise<TransitStop | null> {
     try {
