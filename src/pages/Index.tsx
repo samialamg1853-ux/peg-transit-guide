@@ -78,7 +78,7 @@ const Index = () => {
           tripPaths={trip ? trip.segments.map((s) => s.path || []) : undefined}
           onStopSelect={handleStopSelect}
           selectedStop={selectedStop || undefined}
-          className="absolute inset-0"
+          className="h-full w-full"
           onLocateUser={setLocateUser}
           onMapClick={handleMapClick}
         />

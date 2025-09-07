@@ -222,7 +222,7 @@ export function TransitMap({
 
   return (
     <div className={`relative ${className ?? ''}`}>
-      <div ref={mapContainerRef} className="w-full h-full" />
+      <div ref={mapContainerRef} className="absolute inset-0" />
       <div className="absolute top-4 right-4 z-[1000]">
         <Button
           onClick={locateUser}
