@@ -3,6 +3,7 @@ import { TransitMap } from '@/components/TransitMap';
 import { StopSchedule } from '@/components/StopSchedule';
 import { StopSearch } from '@/components/StopSearch';
 import { FavoriteStops } from '@/components/FavoriteStops';
+import { FavoriteBar } from '@/components/FavoriteBar';
 import { TripPlanner } from '@/components/TripPlanner';
 import { TripPlan, TransitStop } from '@/services/winnipegtransit';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -69,6 +70,7 @@ const Index = () => {
           </div>
         </div>
       </header>
+      <FavoriteBar onStopSelect={handleStopSelect} />
 
       {/* Map with Bottom Sheet */}
       <div className="relative flex-1">
