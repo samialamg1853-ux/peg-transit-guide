@@ -81,8 +81,9 @@ export const winnipegTransitAPI = {
   // Get stop schedule
   async getStopSchedule(stopId: number): Promise<StopSchedule | null> {
     try {
+      const now = new Date().toISOString();
       const response = await fetch(
-        `${API_BASE_URL}/stops/${stopId}/schedule.json?max-results-per-route=3&api-key=${API_KEY}`
+        `${API_BASE_URL}/stops/${stopId}/schedule.json?max-results-per-route=10&start=${encodeURIComponent(now)}&api-key=${API_KEY}`
       );
       const data = await response.json();
       return data["stop-schedule"] || null;
