@@ -1,22 +1,24 @@
-import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import { Icon, LatLngExpression } from 'leaflet';
+import React, { useEffect, useRef, useState } from 'react';
+import L, { Icon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { TransitStop, winnipegTransitAPI } from '@/services/winnipegtransit';
 import { Button } from '@/components/ui/button';
 import { MapPin, Navigation } from 'lucide-react';
 
-// Fix for default markers in React Leaflet
-delete (Icon.Default.prototype as any)._getIconUrl;
+// Fix default marker icons
+// @ts-ignore
+delete Icon.Default.prototype._getIconUrl;
 Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 });
 
 // Custom transit stop icon
 const transitStopIcon = new Icon({
-  iconUrl: 'data:image/svg+xml;base64,' + btoa(`
+  iconUrl:
+    'data:image/svg+xml;base64,' +
+    btoa(`
     <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="16" cy="16" r="12" fill="#0ea5e9" stroke="white" stroke-width="2"/>
       <circle cx="16" cy="16" r="6" fill="white"/>
@@ -34,117 +36,143 @@ interface TransitMapProps {
   className?: string;
 }
 
-// Component to handle map interactions
-function MapController({ onLocationFound }: { onLocationFound: (lat: number, lng: number) => void }) {
-  const map = useMap();
+export function TransitMap({ onStopSelect, selectedStop, className }: TransitMapProps) {
+  const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<L.Map | null>(null);
+  const stopsLayerRef = useRef<L.LayerGroup | null>(null);
+  const userMarkerRef = useRef<L.Marker | null>(null);
 
-  const locateUser = () => {
-    map.locate({ setView: true, maxZoom: 16 });
-  };
+  const [currentCenter, setCurrentCenter] = useState<[number, number]>([49.8951, -97.1384]); // Winnipeg center
 
+  // Initialize map
   useEffect(() => {
-    map.on('locationfound', (e) => {
-      onLocationFound(e.latlng.lat, e.latlng.lng);
+    if (!mapContainerRef.current || mapRef.current) return;
+
+    const map = L.map(mapContainerRef.current, {
+      center: currentCenter,
+      zoom: 13,
+      zoomControl: true,
     });
 
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      maxZoom: 19,
+    }).addTo(map);
+
+    // Create layers
+    const stopsLayer = L.layerGroup().addTo(map);
+    stopsLayerRef.current = stopsLayer;
+
+    mapRef.current = map;
+
+    // Initial stops load
+    loadNearbyStops(currentCenter[0], currentCenter[1], 2000);
+
     return () => {
-      map.off('locationfound');
+      map.remove();
+      mapRef.current = null;
+      stopsLayerRef.current = null;
     };
-  }, [map, onLocationFound]);
-
-  return (
-    <div className="absolute top-4 right-4 z-[1000]">
-      <Button 
-        onClick={locateUser}
-        size="sm"
-        variant="secondary"
-        className="shadow-card bg-card/90 backdrop-blur-sm hover:bg-card"
-      >
-        <Navigation className="w-4 h-4" />
-      </Button>
-    </div>
-  );
-}
-
-export function TransitMap({ onStopSelect, selectedStop, className }: TransitMapProps) {
-  const [stops, setStops] = useState<TransitStop[]>([]);
-  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
-  const [mapCenter, setMapCenter] = useState<LatLngExpression>([49.8951, -97.1384]); // Winnipeg center
-
-  const handleLocationFound = async (lat: number, lng: number) => {
-    setUserLocation([lat, lng]);
-    setMapCenter([lat, lng]);
-    
-    // Fetch nearby stops
-    const nearbyStops = await winnipegTransitAPI.getStopsNear(lat, lng, 1000);
-    setStops(nearbyStops);
-  };
-
-  useEffect(() => {
-    // Load some initial stops around Winnipeg downtown
-    winnipegTransitAPI.getStopsNear(49.8951, -97.1384, 2000).then(setStops);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Helper: Load nearby stops and render markers
+  const loadNearbyStops = async (lat: number, lng: number, distance = 1000) => {
+    try {
+      const stops = await winnipegTransitAPI.getStopsNear(lat, lng, distance);
+      renderStops(stops);
+    } catch (e) {
+      console.error('Failed to load nearby stops', e);
+    }
+  };
+
+  const renderStops = (stops: TransitStop[]) => {
+    const map = mapRef.current;
+    const layer = stopsLayerRef.current;
+    if (!map || !layer) return;
+
+    layer.clearLayers();
+
+    stops.forEach((stop) => {
+      const marker = L.marker([stop.geographic.latitude, stop.geographic.longitude], {
+        icon: transitStopIcon,
+        title: stop.name,
+      });
+
+      const popupHtml = `
+        <div style="min-width:200px">
+          <h3 style="margin:0 0 4px 0;font-weight:600;color:var(--foreground)">${stop.name}</h3>
+          <p style="margin:0 0 8px 0;color:var(--muted-foreground);font-size:12px">
+            Stop #${stop.number} • ${stop.direction} ${stop.side}
+          </p>
+        </div>
+      `;
+
+      marker.bindPopup(popupHtml);
+      marker.on('click', () => onStopSelect?.(stop));
+      marker.addTo(layer);
+    });
+  };
+
+  // Locate user and fetch nearby stops
+  const locateUser = () => {
+    if (!mapRef.current) return;
+    if (!navigator.geolocation) return;
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setCurrentCenter([latitude, longitude]);
+        mapRef.current!.setView([latitude, longitude], 15, { animate: true });
+
+        // User marker
+        if (userMarkerRef.current) {
+          userMarkerRef.current.setLatLng([latitude, longitude]);
+        } else {
+          userMarkerRef.current = L.marker([latitude, longitude]).addTo(mapRef.current!);
+          userMarkerRef.current.bindPopup('<div style="text-align:center"><b>Your Location</b></div>');
+        }
+
+        await loadNearbyStops(latitude, longitude, 1000);
+      },
+      (err) => {
+        console.warn('Geolocation error', err);
+      },
+      { enableHighAccuracy: true }
+    );
+  };
+
+  // Center on selected stop
+  useEffect(() => {
+    if (!selectedStop || !mapRef.current) return;
+    mapRef.current.setView(
+      [selectedStop.geographic.latitude, selectedStop.geographic.longitude],
+      16,
+      { animate: true }
+    );
+  }, [selectedStop]);
+
   return (
-    <div className={`relative ${className}`}>
-      <MapContainer
-        center={mapCenter}
-        zoom={13}
-        style={{ height: '100%', width: '100%' }}
-        className="rounded-lg"
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        
-        <MapController onLocationFound={handleLocationFound} />
-        
-        {/* User location marker */}
-        {userLocation && (
-          <Marker position={userLocation}>
-            <Popup>
-              <div className="text-center">
-                <MapPin className="w-4 h-4 mx-auto mb-1 text-primary" />
-                <p className="font-medium">Your Location</p>
-              </div>
-            </Popup>
-          </Marker>
-        )}
-        
-        {/* Transit stop markers */}
-        {stops.map((stop) => (
-          <Marker
-            key={stop.key}
-            position={[stop.geographic.latitude, stop.geographic.longitude]}
-            icon={transitStopIcon}
-            eventHandlers={{
-              click: () => onStopSelect?.(stop),
-            }}
-          >
-            <Popup>
-              <div className="min-w-[200px]">
-                <h3 className="font-semibold text-foreground mb-1">{stop.name}</h3>
-                <p className="text-sm text-muted-foreground mb-2">
-                  Stop #{stop.number} • {stop.direction} {stop.side}
-                </p>
-                {stop.distances && (
-                  <p className="text-xs text-muted-foreground mb-2">
-                    {Math.round(stop.distances.walking)}m walking distance
-                  </p>
-                )}
-                <Button 
-                  size="sm" 
-                  onClick={() => onStopSelect?.(stop)}
-                  className="w-full"
-                >
-                  View Schedule
-                </Button>
-              </div>
-            </Popup>
-          </Marker>
-        ))}
-      </MapContainer>
+    <div className={`relative ${className ?? ''}`}>
+      <div ref={mapContainerRef} className="absolute inset-0 rounded-lg" />
+      <div className="absolute top-4 right-4 z-[1000]">
+        <Button
+          onClick={locateUser}
+          size="sm"
+          variant="secondary"
+          className="shadow-card bg-card/90 backdrop-blur-sm hover:bg-card"
+        >
+          <Navigation className="w-4 h-4" />
+        </Button>
+      </div>
+      <div className="absolute bottom-4 left-4 z-[1000] pointer-events-none">
+        <div className="flex items-center gap-2 bg-background/80 backdrop-blur-sm px-3 py-2 rounded-md shadow-card">
+          <MapPin className="w-4 h-4 text-primary" />
+          <span className="text-xs text-muted-foreground">Tap a stop to view schedule</span>
+        </div>
+      </div>
+      {/* Spacer to give the absolute map height */}
+      <div className="opacity-0 select-none h-full">map</div>
     </div>
   );
 }
