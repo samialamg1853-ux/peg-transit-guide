@@ -4,6 +4,7 @@ import { StopSchedule } from '@/components/StopSchedule';
 import { StopSearch } from '@/components/StopSearch';
 import { FavoriteStops } from '@/components/FavoriteStops';
 import { TripPlanner } from '@/components/TripPlanner';
+import { RouteTimeline } from '@/components/RouteTimeline';
 import { TripPlan } from '@/services/winnipegtransit';
 import { TransitStop } from '@/services/winnipegtransit';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -105,16 +106,8 @@ const Index = () => {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg">Trip Details</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                  {trip.segments.map((seg, idx) => (
-                    <div key={idx}>
-                      <p className="font-medium">{seg.route ? `Route ${seg.route.number} ${seg.route.name}` : seg.type}</p>
-                      <p className="text-muted-foreground">
-                        {seg.times?.start && new Date(seg.times.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        {seg.times?.end ? ` - ${new Date(seg.times.end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}
-                      </p>
-                    </div>
-                  ))}
+                <CardContent>
+                  <RouteTimeline segments={trip.segments} />
                 </CardContent>
               </Card>
             )}
