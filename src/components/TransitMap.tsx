@@ -37,6 +37,7 @@ interface TransitMapProps {
   className?: string;
   onLocateUser?: (locateFn: () => void) => void;
   tripPaths?: [number, number][][];
+  onMapClick?: () => void;
 }
 
 export function TransitMap({
@@ -45,6 +46,7 @@ export function TransitMap({
   className,
   onLocateUser,
   tripPaths,
+  onMapClick,
 }: TransitMapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -181,6 +183,17 @@ export function TransitMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onLocateUser]);
 
+  // Handle map click events
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const handler = () => onMapClick?.();
+    map.on('click', handler);
+    return () => {
+      map.off('click', handler);
+    };
+  }, [onMapClick]);
+
   // Center on selected stop
   useEffect(() => {
     if (!selectedStop || !mapRef.current) return;
@@ -209,7 +222,7 @@ export function TransitMap({
 
   return (
     <div className={`relative ${className ?? ''}`}>
-      <div ref={mapContainerRef} className="w-full h-full min-h-[400px] rounded-lg" />
+      <div ref={mapContainerRef} className="w-full h-full" />
       <div className="absolute top-4 right-4 z-[1000]">
         <Button
           onClick={locateUser}
