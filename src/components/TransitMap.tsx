@@ -65,10 +65,16 @@ export function TransitMap({ onStopSelect, selectedStop, className }: TransitMap
 
     mapRef.current = map;
 
+    // Ensure map sizes correctly after mount and on resize
+    setTimeout(() => map.invalidateSize(), 0);
+    const onResize = () => map.invalidateSize();
+    window.addEventListener('resize', onResize);
+
     // Initial stops load
     loadNearbyStops(currentCenter[0], currentCenter[1], 2000);
 
     return () => {
+      window.removeEventListener('resize', onResize);
       map.remove();
       mapRef.current = null;
       stopsLayerRef.current = null;
@@ -154,7 +160,7 @@ export function TransitMap({ onStopSelect, selectedStop, className }: TransitMap
 
   return (
     <div className={`relative ${className ?? ''}`}>
-      <div ref={mapContainerRef} className="absolute inset-0 rounded-lg" />
+      <div ref={mapContainerRef} className="w-full h-full min-h-[400px] rounded-lg" />
       <div className="absolute top-4 right-4 z-[1000]">
         <Button
           onClick={locateUser}
@@ -171,8 +177,6 @@ export function TransitMap({ onStopSelect, selectedStop, className }: TransitMap
           <span className="text-xs text-muted-foreground">Tap a stop to view schedule</span>
         </div>
       </div>
-      {/* Spacer to give the absolute map height */}
-      <div className="opacity-0 select-none h-full">map</div>
     </div>
   );
 }

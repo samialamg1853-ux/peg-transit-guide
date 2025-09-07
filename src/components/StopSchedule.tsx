@@ -151,51 +151,63 @@ export function StopSchedule({ stop, onClose }: StopScheduleProps) {
           </p>
         ) : (
           <div className="space-y-4">
-            {schedule["route-schedules"].map((route) => (
-              <div key={route.key} className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Badge 
-                    className="text-xs px-2 py-1"
-                    style={{
-                      backgroundColor: route.badge_style["background-color"],
-                      color: route.badge_style.color,
-                    }}
-                  >
-                    {route.badge_label}
-                  </Badge>
-                  <span className="font-medium text-sm">{route.name}</span>
-                </div>
-                
-                <div className="space-y-1">
-                  {route.times.slice(0, 3).map((time, index) => {
-                    const isEstimated = !!time.departure.estimated;
-                    const departureTime = time.departure.estimated || time.departure.scheduled;
-                    
-                    return (
-                      <div 
-                        key={index}
-                        className="flex items-center justify-between p-2 rounded-md bg-muted/50"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Clock className="w-3 h-3 text-muted-foreground" />
-                          <span className="text-sm font-medium">
-                            {formatTime(departureTime)}
+            {schedule["route-schedules"].map((route: any) => {
+              const badgeStyle = route.badge_style || route["badge-style"] || {};
+              const badgeBg = badgeStyle["background-color"] || 'hsl(var(--primary))';
+              const badgeColor = badgeStyle.color || 'hsl(var(--primary-foreground))';
+              const badgeLabel = route.badge_label || route["badge-label"] || route.number || 'Route';
+              const routeName = route.name || route.route?.name || `Route ${route.number || ''}`;
+
+              const times = Array.isArray(route.times)
+                ? route.times
+                : Array.isArray(route["scheduled-stops"]) 
+                  ? route["scheduled-stops"].map((s: any) => s.times).filter(Boolean)
+                  : [];
+
+              return (
+                <div key={route.key || route.route?.key || routeName} className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Badge 
+                      className="text-xs px-2 py-1"
+                      style={{ backgroundColor: badgeBg, color: badgeColor }}
+                    >
+                      {badgeLabel}
+                    </Badge>
+                    <span className="font-medium text-sm">{routeName}</span>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    {times.slice(0, 3).map((time: any, index: number) => {
+                      const isEstimated = !!time?.departure?.estimated;
+                      const departureTime = time?.departure?.estimated || time?.departure?.scheduled;
+                      
+                      if (!departureTime) return null;
+                      return (
+                        <div 
+                          key={index}
+                          className="flex items-center justify-between p-2 rounded-md bg-muted/50"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-3 h-3 text-muted-foreground" />
+                            <span className="text-sm font-medium">
+                              {formatTime(departureTime)}
+                            </span>
+                            {isEstimated && (
+                              <Badge variant="secondary" className="text-xs">
+                                Live
+                              </Badge>
+                            )}
+                          </div>
+                          <span className="text-sm font-medium text-primary">
+                            {getTimeUntil(departureTime)}
                           </span>
-                          {isEstimated && (
-                            <Badge variant="secondary" className="text-xs">
-                              Live
-                            </Badge>
-                          )}
                         </div>
-                        <span className="text-sm font-medium text-primary">
-                          {getTimeUntil(departureTime)}
-                        </span>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </CardContent>
