@@ -52,12 +52,14 @@ export interface TripSegment {
   times?: { start?: string; end?: string; departure?: string; arrival?: string };
   shape?: { points?: string };
   path?: [number, number][];
+  color?: string;
 }
 
 export interface TripPlan {
   segments: TripSegment[];
 }
 // Helper to normalize API stop shape into our TransitStop
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function normalizeStop(raw: any): TransitStop {
   const geographic = raw.centre?.geographic || raw.geographic || { latitude: 0, longitude: 0 };
   const direct = raw.distances?.direct ?? undefined;
@@ -118,9 +120,9 @@ export const winnipegTransitAPI = {
       const distance = opts?.distance ?? 6000;
       const routeParam = opts?.route ? `&route=${encodeURIComponent(opts.route)}` : '';
       const url = `${API_BASE_URL}/stops.json?name=${encodeURIComponent(query)}${routeParam}&lat=${lat}&lon=${lon}&distance=${distance}&api-key=${API_KEY}`;
-      const response = await fetch(url);
-      let data = await response.json();
-      let stops: TransitStop[] = (data.stops || []).map(normalizeStop);
+        const response = await fetch(url);
+        const data = await response.json();
+        let stops: TransitStop[] = (data.stops || []).map(normalizeStop);
 
       // Fallback: broaden search if no results
       if (!stops.length) {
@@ -149,22 +151,34 @@ export const winnipegTransitAPI = {
       const data = await response.json();
       const trip = data.trips?.[0];
       if (!trip) return null;
-      const segments: TripSegment[] = (trip.segments || []).map((seg: any) => {
+        const segments: TripSegment[] = (trip.segments || []).map(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (seg: any) => {
         const pts: string | undefined = seg.shape?.points;
         const path = pts
-          ? pts.trim().split(/\s+/).map((p: string) => {
-              const [lon, lat] = p.split(',').map(Number);
-              return [lat, lon] as [number, number];
-            })
+          ? pts
+              .trim()
+              .split(/\s+/)
+              .map((p: string) => {
+                const [lon, lat] = p.split(',').map(Number);
+                return [lat, lon] as [number, number];
+              })
           : [];
+        const color =
+          seg.route?.badge_style?.['background-color'] ||
+          (seg.type === 'walk' ? '#6b7280' : '#0ea5e9');
         return {
           type: seg.type,
-          route: seg.route,
+          route: seg.route ? { number: seg.route.number, name: seg.route.name } : undefined,
           from: seg.from,
           to: seg.to,
-          times: { start: seg.times?.start || seg.times?.departure, end: seg.times?.end || seg.times?.arrival },
+          times: {
+            start: seg.times?.start || seg.times?.departure,
+            end: seg.times?.end || seg.times?.arrival,
+          },
           shape: seg.shape,
           path,
+          color,
         } as TripSegment;
       });
       return { segments };

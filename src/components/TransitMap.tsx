@@ -36,7 +36,7 @@ interface TransitMapProps {
   selectedStop?: TransitStop;
   className?: string;
   onLocateUser?: (locateFn: () => void) => void;
-  tripPaths?: [number, number][][];
+  tripPaths?: { path: [number, number][]; color?: string }[];
 }
 
 export function TransitMap({
@@ -195,7 +195,8 @@ export function TransitMap({
     layer.clearLayers();
     if (!tripPaths || !tripPaths.length) return;
     tripPaths.forEach((p) => {
-      L.polyline(p, { color: "#0ea5e9", weight: 4 }).addTo(layer);
+      if (!p.path.length) return;
+      L.polyline(p.path, { color: p.color || "#0ea5e9", weight: 4 }).addTo(layer);
     });
     if (map) {
       const bounds = layer.getBounds();

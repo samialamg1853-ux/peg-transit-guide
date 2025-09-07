@@ -102,10 +102,26 @@ const Index = () => {
                 <CardContent className="space-y-2 text-sm">
                   {trip.segments.map((seg, idx) => (
                     <div key={idx}>
-                      <p className="font-medium">{seg.route ? `Route ${seg.route.number} ${seg.route.name}` : seg.type}</p>
+                      <p className="font-medium">
+                        {seg.route ? `Route ${seg.route.number} ${seg.route.name}` : seg.type}
+                      </p>
+                      {seg.from?.name && seg.to?.name && (
+                        <p className="text-muted-foreground">
+                          {seg.from.name} → {seg.to.name}
+                        </p>
+                      )}
                       <p className="text-muted-foreground">
-                        {seg.times?.start && new Date(seg.times.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        {seg.times?.end ? ` - ${new Date(seg.times.end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}
+                        {seg.times?.start &&
+                          new Date(seg.times.start).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        {seg.times?.end
+                          ? ` - ${new Date(seg.times.end).toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}`
+                          : ''}
                       </p>
                     </div>
                   ))}
@@ -164,7 +180,7 @@ const Index = () => {
           <div className="lg:col-span-2">
             <Card className="shadow-card h-full">
               <CardContent className="p-0 h-full">
-                <TransitMap tripPaths={trip ? trip.segments.map(s => s.path || []) : undefined} 
+                <TransitMap tripPaths={trip ? trip.segments.map(s => ({ path: s.path || [], color: s.color })) : undefined}
                   onStopSelect={handleStopSelect}
                   selectedStop={selectedStop || undefined}
                   className="h-full min-h-[400px] lg:min-h-full"
