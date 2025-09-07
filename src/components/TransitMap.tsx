@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { MapPin, Navigation } from 'lucide-react';
 
 // Fix default marker icons
-// @ts-ignore
+// @ts-expect-error Leaflet's typings omit this method
 delete Icon.Default.prototype._getIconUrl;
 Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
@@ -34,9 +34,15 @@ interface TransitMapProps {
   onStopSelect?: (stop: TransitStop) => void;
   selectedStop?: TransitStop;
   className?: string;
+  onLocateUser?: (locateFn: () => void) => void;
 }
 
-export function TransitMap({ onStopSelect, selectedStop, className }: TransitMapProps) {
+export function TransitMap({
+  onStopSelect,
+  selectedStop,
+  className,
+  onLocateUser,
+}: TransitMapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const stopsLayerRef = useRef<L.LayerGroup | null>(null);
@@ -147,6 +153,12 @@ export function TransitMap({ onStopSelect, selectedStop, className }: TransitMap
       { enableHighAccuracy: true }
     );
   };
+
+  // Expose locate function to parent
+  useEffect(() => {
+    onLocateUser?.(locateUser);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onLocateUser]);
 
   // Center on selected stop
   useEffect(() => {
