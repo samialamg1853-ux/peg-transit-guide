@@ -163,6 +163,14 @@ function toast({ ...props }: Toast) {
   };
 }
 
+function toastError(description: string, title = "Error") {
+  return toast({
+    title,
+    description,
+    variant: "destructive",
+  });
+}
+
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState);
 
@@ -183,4 +191,4 @@ function useToast() {
   };
 }
 
-export { useToast, toast };
+export { useToast, toast, toastError };
