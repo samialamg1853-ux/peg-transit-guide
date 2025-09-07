@@ -79,11 +79,13 @@ export const winnipegTransitAPI = {
     }
   },
 
-  // Search stops by name or number
+  // Search stops by name or number with required bounds (covers greater Winnipeg area)
   async searchStops(query: string): Promise<TransitStop[]> {
     try {
+      // Use Winnipeg's approximate bounds to satisfy API requirements
+      const bounds = 'sw:49.766,-97.325,ne:49.963,-96.953'; // Greater Winnipeg area
       const response = await fetch(
-        `${API_BASE_URL}/stops.json?name=${encodeURIComponent(query)}&api-key=${API_KEY}`
+        `${API_BASE_URL}/stops.json?name=${encodeURIComponent(query)}&bounds=${bounds}&api-key=${API_KEY}`
       );
       const data = await response.json();
       return data.stops || [];
