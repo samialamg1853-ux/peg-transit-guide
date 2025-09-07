@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { TransitStop, StopSchedule as StopScheduleType, winnipegTransitAPI } from '@/services/winnipegtransit';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Clock, MapPin, RefreshCw, Bus } from 'lucide-react';
+import { Clock, MapPin, RefreshCw, Bus, Star } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { addFavorite, removeFavorite, isFavorite } from '@/lib/favorites';
 
 interface StopScheduleProps {
   stop: TransitStop;
@@ -127,11 +128,27 @@ export function StopSchedule({ stop, onClose }: StopScheduleProps) {
               Stop #{stop.number} • {stop.direction} {stop.side}
             </div>
           </div>
-          {onClose && (
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              ×
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                if (isFavorite(stop.key)) {
+                  removeFavorite(stop.key);
+                } else {
+                  addFavorite({ key: stop.key, name: stop.name, number: stop.number, direction: stop.direction, side: stop.side });
+                }
+              }}
+              title="Toggle favorite"
+            >
+              <Star className={`w-4 h-4 ${isFavorite(stop.key) ? 'text-accent' : 'text-muted-foreground'}`} />
             </Button>
-          )}
+            {onClose && (
+              <Button variant="ghost" size="sm" onClick={onClose} title="Close">
+                ×
+              </Button>
+            )}
+          </div>
         </div>
         <Button 
           variant="outline" 

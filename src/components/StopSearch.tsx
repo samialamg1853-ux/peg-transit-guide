@@ -17,6 +17,8 @@ export function StopSearch({ onStopSelect, className }: StopSearchProps) {
   const [loading, setLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  const [nearby, setNearby] = useState<TransitStop[]>([]);
+  const [loadingNearby, setLoadingNearby] = useState(false);
 
   // Try to get user geolocation once to improve search relevance
   useEffect(() => {
@@ -27,6 +29,24 @@ export function StopSearch({ onStopSelect, className }: StopSearchProps) {
       { enableHighAccuracy: true, timeout: 6000 }
     );
   }, []);
+
+  // Load nearby stops when idle or location changes
+  useEffect(() => {
+    const load = async () => {
+      setLoadingNearby(true);
+      try {
+        const [lat, lon] = userLocation ?? [49.8951, -97.1384];
+        const stops = await winnipegTransitAPI.getStopsNear(lat, lon, 1500);
+        setNearby(stops.slice(0, 12));
+      } catch (e) {
+        console.error('Nearby load error', e);
+        setNearby([]);
+      } finally {
+        setLoadingNearby(false);
+      }
+    };
+    if (query.trim().length < 2) load();
+  }, [userLocation, query]);
 
   useEffect(() => {
     const searchStops = async () => {
@@ -39,7 +59,7 @@ export function StopSearch({ onStopSelect, className }: StopSearchProps) {
       setLoading(true);
       try {
         const [lat, lon] = userLocation ?? [49.8951, -97.1384]; // Winnipeg centre fallback
-        const stops = await winnipegTransitAPI.searchStops(query.trim(), { lat, lon, distance: 5000 });
+        const stops = await winnipegTransitAPI.searchStops(query.trim(), { lat, lon, distance: 6000 });
         setResults(stops.slice(0, 12)); // Limit to 12 results
         setShowResults(true);
       } catch (error) {
@@ -60,6 +80,15 @@ export function StopSearch({ onStopSelect, className }: StopSearchProps) {
     onStopSelect(stop);
   };
 
+  const locateNow = () => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setUserLocation([pos.coords.latitude, pos.coords.longitude]),
+      () => setUserLocation(null),
+      { enableHighAccuracy: true, timeout: 6000 }
+    );
+  };
+
   return (
     <div className={`relative ${className}`}>
       <div className="relative">
@@ -75,6 +104,7 @@ export function StopSearch({ onStopSelect, className }: StopSearchProps) {
         />
       </div>
 
+      {/* Search dropdown results */}
       {showResults && (
         <Card className="absolute top-full left-0 right-0 mt-2 z-50 shadow-elegant max-h-80 overflow-y-auto">
           <CardContent className="p-0">
@@ -129,6 +159,55 @@ export function StopSearch({ onStopSelect, className }: StopSearchProps) {
           </CardContent>
         </Card>
       )}
+
+      {/* Nearby stops section */}
+      <div className="mt-4 space-y-2">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-medium">Nearby stops</p>
+          <Button variant="secondary" size="sm" onClick={locateNow}>
+            <MapPin className="w-3 h-3 mr-2" /> Use my location
+          </Button>
+        </div>
+
+        <Card>
+          <CardContent className="p-0">
+            {loadingNearby ? (
+              <div className="p-3">
+                {[1,2,3,4,5].map((i) => (
+                  <div key={i} className="flex items-center gap-3 p-2">
+                    <Skeleton className="w-6 h-6 rounded-full" />
+                    <div className="flex-1 space-y-1">
+                      <Skeleton className="h-4 w-40" />
+                      <Skeleton className="h-3 w-24" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="divide-y divide-border">
+                {nearby.slice(0, 8).map((stop) => (
+                  <Button
+                    key={stop.key}
+                    variant="ghost"
+                    className="w-full justify-start h-auto p-3 rounded-none"
+                    onClick={() => handleStopSelect(stop)}
+                  >
+                    <div className="flex items-center gap-3 w-full">
+                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                        <MapPin className="w-3 h-3 text-primary" />
+                      </div>
+                      <div className="flex-1 text-left">
+                        <p className="font-medium text-sm">{stop.name}</p>
+                        <p className="text-xs text-muted-foreground">Stop #{stop.number}</p>
+                      </div>
+                    </div>
+                  </Button>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
