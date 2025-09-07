@@ -85,8 +85,9 @@ export function StopSchedule({ stop, onClose }: StopScheduleProps) {
               <div key={i} className="space-y-2">
                 <Skeleton className="h-6 w-24" />
                 <div className="space-y-2">
-                  <Skeleton className="h-12 w-full" />
-                  <Skeleton className="h-12 w-full" />
+                  {Array.from({ length: 5 }).map((_, j) => (
+                    <Skeleton key={j} className="h-12 w-full" />
+                  ))}
                 </div>
               </div>
             ))}
@@ -203,7 +204,7 @@ export function StopSchedule({ stop, onClose }: StopScheduleProps) {
                   </div>
                   
                   <div className="space-y-1">
-                    {times.slice(0, 3).map((time: any, index: number) => {
+                    {times.slice(0, 10).map((time: any, index: number) => {
                       const isEstimated = !!time?.departure?.estimated;
                       const departureTime = time?.departure?.estimated || time?.departure?.scheduled;
                       
