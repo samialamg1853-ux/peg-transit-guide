@@ -10,24 +10,29 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Bus, Clock, Navigation, Search, MapPin } from 'lucide-react';
 import { ModeToggle } from '@/components/ui/ModeToggle';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 const Index = () => {
   const [selectedStop, setSelectedStop] = useState<TransitStop | null>(null);
   const [showSchedule, setShowSchedule] = useState(false);
   const [locateUser, setLocateUser] = useState<() => void>(() => {});
   const [trip, setTrip] = useState<TripPlan | null>(null);
+  const [panelOpen, setPanelOpen] = useState(false);
 
   const handleStopSelect = (stop: TransitStop) => {
     setSelectedStop(stop);
     setShowSchedule(true);
+    setPanelOpen(false);
   };
 
   const handleCloseSchedule = () => {
     setShowSchedule(false);
     setSelectedStop(null);
+    setPanelOpen(false);
   };
   const handleTripPlanned = (t: TripPlan | null) => {
     setTrip(t);
+    if (t) setPanelOpen(false);
   };
 
 
@@ -48,6 +53,114 @@ const Index = () => {
               </div>
               <div className="flex items-center gap-2">
                 <ModeToggle />
+                <Sheet open={panelOpen} onOpenChange={setPanelOpen}>
+                  <SheetTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-primary-foreground hover:bg-primary-foreground/20"
+                    >
+                      <Search className="w-4 h-4" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="p-0 sm:max-w-sm overflow-y-auto">
+                    <div className="p-4 space-y-4">
+                      {/* Trip Planner */}
+                      <Card className="shadow-card">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="flex items-center gap-2 text-lg">
+                            <MapPin className="w-5 h-5 text-primary" />
+                            Plan a Trip
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <TripPlanner onTripPlanned={handleTripPlanned} />
+                        </CardContent>
+                      </Card>
+
+                      {/* Search */}
+                      <Card className="shadow-card">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="flex items-center gap-2 text-lg">
+                            <Search className="w-5 h-5 text-primary" />
+                            Find a Stop
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <StopSearch onStopSelect={handleStopSelect} />
+                        </CardContent>
+                      </Card>
+
+                      {/* Favorite Stops */}
+                      <FavoriteStops onStopSelect={handleStopSelect} />
+
+                      {trip && (
+                        <Card className="shadow-card">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-lg">Trip Details</CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-2 text-sm">
+                            {trip.segments.map((seg, idx) => (
+                              <div key={idx}>
+                                <p className="font-medium">{seg.route ? `Route ${seg.route.number} ${seg.route.name}` : seg.type}</p>
+                                <p className="text-muted-foreground">
+                                  {seg.times?.start && new Date(seg.times.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  {seg.times?.end ? ` - ${new Date(seg.times.end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}
+                                </p>
+                              </div>
+                            ))}
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {/* Schedule Display */}
+                      {showSchedule && selectedStop ? (
+                        <StopSchedule
+                          stop={selectedStop}
+                          onClose={handleCloseSchedule}
+                        />
+                      ) : (
+                        <Card className="shadow-card bg-gradient-card">
+                          <CardContent className="p-6 text-center">
+                            <div className="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
+                              <Clock className="w-8 h-8 text-primary" />
+                            </div>
+                            <h3 className="font-semibold text-lg mb-2">Real-time Schedules</h3>
+                            <p className="text-muted-foreground text-sm mb-4">
+                              Select a stop on the map or search above to view live bus arrival times
+                            </p>
+                            <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
+                              <div className="flex items-center gap-1">
+                                <div className="w-2 h-2 bg-transit-blue rounded-full"></div>
+                                <span>Regular Route</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <div className="w-2 h-2 bg-transit-green rounded-full"></div>
+                                <span>Express Route</span>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {/* Quick Info */}
+                      <Card className="shadow-card">
+                        <CardContent className="p-4">
+                          <div className="grid grid-cols-2 gap-4 text-center">
+                            <div>
+                              <div className="text-2xl font-bold text-primary">24/7</div>
+                              <div className="text-xs text-muted-foreground">Service Hours</div>
+                            </div>
+                            <div>
+                              <div className="text-2xl font-bold text-accent">Live</div>
+                              <div className="text-xs text-muted-foreground">Real-time Data</div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </SheetContent>
+                </Sheet>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -62,118 +175,17 @@ const Index = () => {
       </header>
 
       <div className="container mx-auto p-4 max-w-7xl">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-120px)]">
-          {/* Search and Schedule Panel */}
-          <div className="lg:col-span-1 space-y-4">
-            {/* Trip Planner */}
-            <Card className="shadow-card">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <MapPin className="w-5 h-5 text-primary" />
-                  Plan a Trip
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <TripPlanner onTripPlanned={handleTripPlanned} />
-              </CardContent>
-            </Card>
-
-            {/* Search */}
-            <Card className="shadow-card">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Search className="w-5 h-5 text-primary" />
-                  Find a Stop
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <StopSearch onStopSelect={handleStopSelect} />
-              </CardContent>
-            </Card>
-
-            {/* Favorite Stops */}
-            <FavoriteStops onStopSelect={handleStopSelect} />
-
-            {trip && (
-              <Card className="shadow-card">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">Trip Details</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                  {trip.segments.map((seg, idx) => (
-                    <div key={idx}>
-                      <p className="font-medium">{seg.route ? `Route ${seg.route.number} ${seg.route.name}` : seg.type}</p>
-                      <p className="text-muted-foreground">
-                        {seg.times?.start && new Date(seg.times.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        {seg.times?.end ? ` - ${new Date(seg.times.end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}
-                      </p>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Schedule Display */}
-            {showSchedule && selectedStop ? (
-              <StopSchedule
-                stop={selectedStop}
-                onClose={handleCloseSchedule}
-              />
-            ) : (
-              <Card className="shadow-card bg-gradient-card">
-                <CardContent className="p-6 text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
-                    <Clock className="w-8 h-8 text-primary" />
-                  </div>
-                  <h3 className="font-semibold text-lg mb-2">Real-time Schedules</h3>
-                  <p className="text-muted-foreground text-sm mb-4">
-                    Select a stop on the map or search above to view live bus arrival times
-                  </p>
-                  <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 bg-transit-blue rounded-full"></div>
-                      <span>Regular Route</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 bg-transit-green rounded-full"></div>
-                      <span>Express Route</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Quick Info */}
-            <Card className="shadow-card">
-              <CardContent className="p-4">
-                <div className="grid grid-cols-2 gap-4 text-center">
-                  <div>
-                    <div className="text-2xl font-bold text-primary">24/7</div>
-                    <div className="text-xs text-muted-foreground">Service Hours</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-accent">Live</div>
-                    <div className="text-xs text-muted-foreground">Real-time Data</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Map */}
-          <div className="lg:col-span-2">
-            <Card className="shadow-card h-full">
-              <CardContent className="p-0 h-full">
-                <TransitMap tripPaths={trip ? trip.segments.map(s => s.path || []) : undefined} 
-                  onStopSelect={handleStopSelect}
-                  selectedStop={selectedStop || undefined}
-                  className="h-full min-h-[400px] lg:min-h-full"
-                  onLocateUser={setLocateUser}
-                />
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+        <Card className="shadow-card h-[calc(100vh-120px)]">
+          <CardContent className="p-0 h-full">
+            <TransitMap
+              tripPaths={trip ? trip.segments.map(s => s.path || []) : undefined}
+              onStopSelect={handleStopSelect}
+              selectedStop={selectedStop || undefined}
+              className="h-full min-h-[400px] lg:min-h-full"
+              onLocateUser={setLocateUser}
+            />
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
