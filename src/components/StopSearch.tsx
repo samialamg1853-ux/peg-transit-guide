@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,6 +20,21 @@ export function StopSearch({ onStopSelect, className }: StopSearchProps) {
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [nearby, setNearby] = useState<TransitStop[]>([]);
   const [loadingNearby, setLoadingNearby] = useState(false);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setShowResults(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Try to get user geolocation once to improve search relevance
   useEffect(() => {
@@ -96,7 +111,7 @@ export function StopSearch({ onStopSelect, className }: StopSearchProps) {
   };
 
   return (
-    <div className={`relative ${className}`}>
+    <div ref={containerRef} className={`relative ${className}`}>
       <div className="space-y-2">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
