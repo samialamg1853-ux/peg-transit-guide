@@ -8,7 +8,7 @@ import { TripPlan } from '@/services/winnipegtransit';
 import { TransitStop } from '@/services/winnipegtransit';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Bus, Clock, Navigation, Search } from 'lucide-react';
+import { Bus, Clock, Navigation, Search, MapPin } from 'lucide-react';
 import { ModeToggle } from '@/components/ui/ModeToggle';
 
 const Index = () => {
