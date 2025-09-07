@@ -118,7 +118,6 @@ export function StopSchedule({ stop, onClose }: StopScheduleProps) {
   }
 
   const routeSchedules = Array.isArray(schedule["route-schedules"]) ? schedule["route-schedules"] : [];
-  const hasRouteSchedules = Array.isArray(schedule["route-schedules"]);
 
   return (
     <Card className="w-full max-w-md shadow-card bg-gradient-card">
@@ -168,13 +167,11 @@ export function StopSchedule({ stop, onClose }: StopScheduleProps) {
       </CardHeader>
 
       <CardContent className="pt-0">
-        {!hasRouteSchedules ? (
+        {routeSchedules.length === 0 ? (
           <p className="text-muted-foreground text-center py-4">
-            Schedule information unavailable
-          </p>
-        ) : routeSchedules.length === 0 ? (
-          <p className="text-muted-foreground text-center py-4">
-            No buses scheduled at this time
+            {Array.isArray(schedule["route-schedules"])
+              ? "No buses scheduled at this time"
+              : "Schedule information unavailable"}
           </p>
         ) : (
           <div className="space-y-4">
