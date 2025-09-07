@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { TransitMap } from '@/components/TransitMap';
 import { StopSchedule } from '@/components/StopSchedule';
 import { StopSearch } from '@/components/StopSearch';
+import { FavoriteStops } from '@/components/FavoriteStops';
 import { TransitStop } from '@/services/winnipegtransit';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -66,10 +67,13 @@ const Index = () => {
               </CardContent>
             </Card>
 
+            {/* Favorite Stops */}
+            <FavoriteStops onStopSelect={handleStopSelect} />
+
             {/* Schedule Display */}
             {showSchedule && selectedStop ? (
-              <StopSchedule 
-                stop={selectedStop} 
+              <StopSchedule
+                stop={selectedStop}
                 onClose={handleCloseSchedule}
               />
             ) : (
