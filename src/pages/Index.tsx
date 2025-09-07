@@ -3,6 +3,8 @@ import { TransitMap } from '@/components/TransitMap';
 import { StopSchedule } from '@/components/StopSchedule';
 import { StopSearch } from '@/components/StopSearch';
 import { FavoriteStops } from '@/components/FavoriteStops';
+import { TripPlanner } from '@/components/TripPlanner';
+import { TripPlan } from '@/services/winnipegtransit';
 import { TransitStop } from '@/services/winnipegtransit';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +14,7 @@ const Index = () => {
   const [selectedStop, setSelectedStop] = useState<TransitStop | null>(null);
   const [showSchedule, setShowSchedule] = useState(false);
   const [locateUser, setLocateUser] = useState<() => void>(() => {});
+  const [trip, setTrip] = useState<TripPlan | null>(null);
 
   const handleStopSelect = (stop: TransitStop) => {
     setSelectedStop(stop);
@@ -22,6 +25,10 @@ const Index = () => {
     setShowSchedule(false);
     setSelectedStop(null);
   };
+  const handleTripPlanned = (t: TripPlan | null) => {
+    setTrip(t);
+  };
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -54,6 +61,19 @@ const Index = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-120px)]">
           {/* Search and Schedule Panel */}
           <div className="lg:col-span-1 space-y-4">
+            {/* Trip Planner */}
+            <Card className="shadow-card">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <MapPin className="w-5 h-5 text-primary" />
+                  Plan a Trip
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <TripPlanner onTripPlanned={handleTripPlanned} />
+              </CardContent>
+            </Card>
+
             {/* Search */}
             <Card className="shadow-card">
               <CardHeader className="pb-3">
@@ -69,6 +89,25 @@ const Index = () => {
 
             {/* Favorite Stops */}
             <FavoriteStops onStopSelect={handleStopSelect} />
+
+            {trip && (
+              <Card className="shadow-card">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">Trip Details</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                  {trip.segments.map((seg, idx) => (
+                    <div key={idx}>
+                      <p className="font-medium">{seg.route ? `Route ${seg.route.number} ${seg.route.name}` : seg.type}</p>
+                      <p className="text-muted-foreground">
+                        {seg.times?.start && new Date(seg.times.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {seg.times?.end ? ` - ${new Date(seg.times.end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}
+                      </p>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Schedule Display */}
             {showSchedule && selectedStop ? (
@@ -121,7 +160,7 @@ const Index = () => {
           <div className="lg:col-span-2">
             <Card className="shadow-card h-full">
               <CardContent className="p-0 h-full">
-                <TransitMap
+                <TransitMap tripPaths={trip ? trip.segments.map(s => s.path || []) : undefined} 
                   onStopSelect={handleStopSelect}
                   selectedStop={selectedStop || undefined}
                   className="h-full min-h-[400px] lg:min-h-full"

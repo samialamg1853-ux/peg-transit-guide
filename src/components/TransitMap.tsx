@@ -36,6 +36,7 @@ interface TransitMapProps {
   selectedStop?: TransitStop;
   className?: string;
   onLocateUser?: (locateFn: () => void) => void;
+  tripPaths?: [number, number][][];
 }
 
 export function TransitMap({
@@ -43,10 +44,12 @@ export function TransitMap({
   selectedStop,
   className,
   onLocateUser,
+  tripPaths,
 }: TransitMapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const stopsLayerRef = useRef<L.LayerGroup | null>(null);
+  const routeLayerRef = useRef<L.LayerGroup | null>(null);
   const userMarkerRef = useRef<L.Marker | null>(null);
 
   const [currentCenter, setCurrentCenter] = useState<[number, number]>([49.8951, -97.1384]); // Winnipeg center
@@ -68,6 +71,8 @@ export function TransitMap({
 
     // Create layers
     const stopsLayer = L.layerGroup().addTo(map);
+    const routeLayer = L.layerGroup().addTo(map);
+    routeLayerRef.current = routeLayer;
     stopsLayerRef.current = stopsLayer;
 
     mapRef.current = map;
@@ -85,6 +90,7 @@ export function TransitMap({
       map.remove();
       mapRef.current = null;
       stopsLayerRef.current = null;
+      routeLayerRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -180,6 +186,22 @@ export function TransitMap({
       { animate: true }
     );
   }, [selectedStop]);
+
+  // Draw planned trip paths
+  useEffect(() => {
+    const map = mapRef.current;
+    const layer = routeLayerRef.current;
+    if (!layer) return;
+    layer.clearLayers();
+    if (!tripPaths || !tripPaths.length) return;
+    tripPaths.forEach((p) => {
+      L.polyline(p, { color: "#0ea5e9", weight: 4 }).addTo(layer);
+    });
+    if (map) {
+      const bounds = layer.getBounds();
+      if (bounds.isValid()) map.fitBounds(bounds, { padding: [20, 20] });
+    }
+  }, [tripPaths]);
 
   return (
     <div className={`relative ${className ?? ''}`}>
