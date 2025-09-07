@@ -18,8 +18,14 @@ const Index = () => {
   const [trip, setTrip] = useState<TripPlan | null>(null);
 
   const handleStopSelect = (stop: TransitStop) => {
+    if (selectedStop && selectedStop.key !== stop.key) {
+      // Close the current schedule when a different stop is chosen
+      setShowSchedule(false);
+    } else {
+      // Toggle the schedule when selecting the same stop or on first selection
+      setShowSchedule((prev) => !prev);
+    }
     setSelectedStop(stop);
-    setShowSchedule(true);
   };
 
   const handleCloseSchedule = () => {
