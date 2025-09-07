@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -16,6 +16,17 @@ export function StopSearch({ onStopSelect, className }: StopSearchProps) {
   const [results, setResults] = useState<TransitStop[]>([]);
   const [loading, setLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+
+  // Try to get user geolocation once to improve search relevance
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setUserLocation([pos.coords.latitude, pos.coords.longitude]),
+      () => setUserLocation(null),
+      { enableHighAccuracy: true, timeout: 6000 }
+    );
+  }, []);
 
   useEffect(() => {
     const searchStops = async () => {
@@ -27,8 +38,9 @@ export function StopSearch({ onStopSelect, className }: StopSearchProps) {
 
       setLoading(true);
       try {
-        const stops = await winnipegTransitAPI.searchStops(query.trim());
-        setResults(stops.slice(0, 10)); // Limit to 10 results
+        const [lat, lon] = userLocation ?? [49.8951, -97.1384]; // Winnipeg centre fallback
+        const stops = await winnipegTransitAPI.searchStops(query.trim(), { lat, lon, distance: 5000 });
+        setResults(stops.slice(0, 12)); // Limit to 12 results
         setShowResults(true);
       } catch (error) {
         console.error('Search error:', error);
@@ -38,9 +50,9 @@ export function StopSearch({ onStopSelect, className }: StopSearchProps) {
       }
     };
 
-    const debounceTimeout = setTimeout(searchStops, 300);
+    const debounceTimeout = setTimeout(searchStops, 350);
     return () => clearTimeout(debounceTimeout);
-  }, [query]);
+  }, [query, userLocation]);
 
   const handleStopSelect = (stop: TransitStop) => {
     setQuery(stop.name);
@@ -94,11 +106,13 @@ export function StopSearch({ onStopSelect, className }: StopSearchProps) {
                       <div className="flex-1 text-left">
                         <p className="font-medium text-sm">{stop.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          Stop #{stop.number} • {stop.direction} {stop.side}
+                          Stop #{stop.number}
+                          {stop.direction ? ` • ${stop.direction}` : ''}
+                          {stop.side ? ` ${stop.side}` : ''}
                         </p>
-                        {stop.distances && (
+                        {typeof stop.distances?.direct === 'number' && (
                           <p className="text-xs text-muted-foreground">
-                            {Math.round(stop.distances.walking)}m away
+                            {Math.round(stop.distances!.direct!)}m away
                           </p>
                         )}
                       </div>
