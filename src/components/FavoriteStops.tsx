@@ -69,5 +69,3 @@ export function FavoriteStops({ onStopSelect, className }: FavoriteStopsProps) {
     </Card>
   );
 }
-
-export default FavoriteStops;

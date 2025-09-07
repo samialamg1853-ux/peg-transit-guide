@@ -98,7 +98,7 @@ const Index = () => {
             </Card>
 
             {/* Favorite Stops */}
-            <FavoriteStops onStopSelect={handleStopSelect} />
+            <FavoriteStops onStopSelect={handleStopSelect} className="shadow-card" />
 
             {trip && (
               <Card className="shadow-card">
