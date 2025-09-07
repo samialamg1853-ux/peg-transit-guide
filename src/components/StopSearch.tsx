@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { TransitStop, winnipegTransitAPI } from '@/services/winnipegtransit';
-import { Search, MapPin, Clock } from 'lucide-react';
+import { Search, MapPin, Clock, Hash } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface StopSearchProps {
@@ -14,6 +14,7 @@ interface StopSearchProps {
 export function StopSearch({ onStopSelect, className }: StopSearchProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<TransitStop[]>([]);
+  const [route, setRoute] = useState('');
   const [loading, setLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
@@ -59,7 +60,12 @@ export function StopSearch({ onStopSelect, className }: StopSearchProps) {
       setLoading(true);
       try {
         const [lat, lon] = userLocation ?? [49.8951, -97.1384]; // Winnipeg centre fallback
-        const stops = await winnipegTransitAPI.searchStops(query.trim(), { lat, lon, distance: 6000 });
+        const stops = await winnipegTransitAPI.searchStops(query.trim(), {
+          lat,
+          lon,
+          distance: 6000,
+          route: route.trim() || undefined,
+        });
         setResults(stops.slice(0, 12)); // Limit to 12 results
         setShowResults(true);
       } catch (error) {
@@ -72,7 +78,7 @@ export function StopSearch({ onStopSelect, className }: StopSearchProps) {
 
     const debounceTimeout = setTimeout(searchStops, 350);
     return () => clearTimeout(debounceTimeout);
-  }, [query, userLocation]);
+  }, [query, userLocation, route]);
 
   const handleStopSelect = (stop: TransitStop) => {
     setQuery(stop.name);
@@ -91,17 +97,28 @@ export function StopSearch({ onStopSelect, className }: StopSearchProps) {
 
   return (
     <div className={`relative ${className}`}>
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input
-          placeholder="Search stops by name or number..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="pl-10 pr-4 shadow-card"
-          onFocus={() => {
-            if (results.length > 0) setShowResults(true);
-          }}
-        />
+      <div className="space-y-2">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Search stops by name or number..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="pl-10 pr-4 shadow-card"
+            onFocus={() => {
+              if (results.length > 0) setShowResults(true);
+            }}
+          />
+        </div>
+        <div className="relative">
+          <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Filter by route number (optional)"
+            value={route}
+            onChange={(e) => setRoute(e.target.value)}
+            className="pl-10 pr-4 shadow-card"
+          />
+        </div>
       </div>
 
       {/* Search dropdown results */}

@@ -95,26 +95,29 @@ export const winnipegTransitAPI = {
   // Search stops by name or number; API requires location context. Includes robust fallback.
   async searchStops(
     query: string,
-    opts?: { lat?: number; lon?: number; distance?: number }
+    opts?: { lat?: number; lon?: number; distance?: number; route?: string }
   ): Promise<TransitStop[]> {
     try {
       const lat = opts?.lat ?? 49.8951; // Winnipeg centre
       const lon = opts?.lon ?? -97.1384;
       const distance = opts?.distance ?? 6000;
-      const url = `${API_BASE_URL}/stops.json?name=${encodeURIComponent(query)}&lat=${lat}&lon=${lon}&distance=${distance}&api-key=${API_KEY}`;
+      const routeParam = opts?.route ? `&route=${encodeURIComponent(opts.route)}` : '';
+      const url = `${API_BASE_URL}/stops.json?name=${encodeURIComponent(query)}${routeParam}&lat=${lat}&lon=${lon}&distance=${distance}&api-key=${API_KEY}`;
       const response = await fetch(url);
       let data = await response.json();
       let stops: TransitStop[] = (data.stops || []).map(normalizeStop);
 
       // Fallback: broaden search if no results
       if (!stops.length) {
-        const wide = await fetch(`${API_BASE_URL}/stops.json?lat=49.8951&lon=-97.1384&distance=15000&api-key=${API_KEY}`);
+        const wide = await fetch(`${API_BASE_URL}/stops.json?lat=49.8951&lon=-97.1384&distance=15000${routeParam}&api-key=${API_KEY}`);
         const wideData = await wide.json();
         const all = (wideData.stops || []).map(normalizeStop);
         const q = query.toLowerCase();
-        stops = all.filter((s: TransitStop) =>
-          s.name.toLowerCase().includes(q) || String(s.number).includes(query)
-        ).slice(0, 20);
+        stops = all
+          .filter((s: TransitStop) =>
+            s.name.toLowerCase().includes(q) || String(s.number).includes(query)
+          )
+          .slice(0, 20);
       }
 
       return stops;
