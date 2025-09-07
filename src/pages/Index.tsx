@@ -4,73 +4,85 @@ import { StopSchedule } from '@/components/StopSchedule';
 import { StopSearch } from '@/components/StopSearch';
 import { FavoriteStops } from '@/components/FavoriteStops';
 import { TripPlanner } from '@/components/TripPlanner';
-import { TripPlan } from '@/services/winnipegtransit';
-import { TransitStop } from '@/services/winnipegtransit';
+import { TripPlan, TransitStop } from '@/services/winnipegtransit';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Bus, Clock, Navigation, Search, MapPin } from 'lucide-react';
 import { ModeToggle } from '@/components/ui/ModeToggle';
+import { BottomSheet } from '@/components/ui/BottomSheet';
 
 const Index = () => {
   const [selectedStop, setSelectedStop] = useState<TransitStop | null>(null);
   const [showSchedule, setShowSchedule] = useState(false);
   const [locateUser, setLocateUser] = useState<() => void>(() => {});
   const [trip, setTrip] = useState<TripPlan | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(true);
 
   const handleStopSelect = (stop: TransitStop) => {
-    if (selectedStop && selectedStop.key !== stop.key) {
-      // Close the current schedule when a different stop is chosen
-      setShowSchedule(false);
-    } else {
-      // Toggle the schedule when selecting the same stop or on first selection
-      setShowSchedule((prev) => !prev);
-    }
     setSelectedStop(stop);
+    setShowSchedule(true);
+    setSheetOpen(true);
   };
 
   const handleCloseSchedule = () => {
     setShowSchedule(false);
     setSelectedStop(null);
   };
+
   const handleTripPlanned = (t: TripPlan | null) => {
     setTrip(t);
+    setSheetOpen(true);
   };
 
+  const handleMapClick = () => {
+    setSheetOpen(false);
+    setShowSchedule(false);
+    setSelectedStop(null);
+  };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex flex-col h-screen bg-background">
       {/* Header */}
       <header className="bg-gradient-primary text-primary-foreground shadow-elegant sticky top-0 z-40">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary-foreground/20 rounded-lg backdrop-blur-sm">
-                  <Bus className="w-6 h-6" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold">Winnipeg Transit</h1>
-                  <p className="text-primary-foreground/80 text-sm">Live bus schedules & navigation</p>
-                </div>
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary-foreground/20 rounded-lg backdrop-blur-sm">
+                <Bus className="w-6 h-6" />
               </div>
-              <div className="flex items-center gap-2">
-                <ModeToggle />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-primary-foreground hover:bg-primary-foreground/20"
-                  onClick={locateUser}
-                >
-                  <Navigation className="w-4 h-4" />
-                </Button>
+              <div>
+                <h1 className="text-xl font-bold">Winnipeg Transit</h1>
+                <p className="text-primary-foreground/80 text-sm">Live bus schedules & navigation</p>
               </div>
             </div>
+            <div className="flex items-center gap-2">
+              <ModeToggle />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-primary-foreground hover:bg-primary-foreground/20"
+                onClick={locateUser}
+              >
+                <Navigation className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
+        </div>
       </header>
 
-      <div className="container mx-auto p-4 max-w-7xl">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-120px)]">
-          {/* Search and Schedule Panel */}
-          <div className="lg:col-span-1 space-y-4">
+      {/* Map with Bottom Sheet */}
+      <div className="relative flex-1">
+        <TransitMap
+          tripPaths={trip ? trip.segments.map((s) => s.path || []) : undefined}
+          onStopSelect={handleStopSelect}
+          selectedStop={selectedStop || undefined}
+          className="absolute inset-0"
+          onLocateUser={setLocateUser}
+          onMapClick={handleMapClick}
+        />
+
+        <BottomSheet open={sheetOpen} onOpenChange={setSheetOpen}>
+          <div className="space-y-4">
             {/* Trip Planner */}
             <Card className="shadow-card">
               <CardHeader className="pb-3">
@@ -100,31 +112,9 @@ const Index = () => {
             {/* Favorite Stops */}
             <FavoriteStops onStopSelect={handleStopSelect} className="shadow-card" />
 
-            {trip && (
-              <Card className="shadow-card">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">Trip Details</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                  {trip.segments.map((seg, idx) => (
-                    <div key={idx}>
-                      <p className="font-medium">{seg.route ? `Route ${seg.route.number} ${seg.route.name}` : seg.type}</p>
-                      <p className="text-muted-foreground">
-                        {seg.times?.start && new Date(seg.times.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        {seg.times?.end ? ` - ${new Date(seg.times.end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}
-                      </p>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
-
             {/* Schedule Display */}
             {showSchedule && selectedStop ? (
-              <StopSchedule
-                stop={selectedStop}
-                onClose={handleCloseSchedule}
-              />
+              <StopSchedule stop={selectedStop} onClose={handleCloseSchedule} />
             ) : (
               <Card className="shadow-card bg-gradient-card">
                 <CardContent className="p-6 text-center">
@@ -148,38 +138,8 @@ const Index = () => {
                 </CardContent>
               </Card>
             )}
-
-            {/* Quick Info */}
-            <Card className="shadow-card">
-              <CardContent className="p-4">
-                <div className="grid grid-cols-2 gap-4 text-center">
-                  <div>
-                    <div className="text-2xl font-bold text-primary">24/7</div>
-                    <div className="text-xs text-muted-foreground">Service Hours</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-accent">Live</div>
-                    <div className="text-xs text-muted-foreground">Real-time Data</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
-
-          {/* Map */}
-          <div className="lg:col-span-2">
-            <Card className="shadow-card h-full">
-              <CardContent className="p-0 h-full">
-                <TransitMap tripPaths={trip ? trip.segments.map(s => s.path || []) : undefined} 
-                  onStopSelect={handleStopSelect}
-                  selectedStop={selectedStop || undefined}
-                  className="h-full min-h-[400px] lg:min-h-full"
-                  onLocateUser={setLocateUser}
-                />
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+        </BottomSheet>
       </div>
     </div>
   );
