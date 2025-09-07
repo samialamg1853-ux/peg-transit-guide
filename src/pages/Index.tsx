@@ -6,7 +6,8 @@ import { FavoriteStops } from '@/components/FavoriteStops';
 import { TransitStop } from '@/services/winnipegtransit';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Bus, MapPin, Clock, Navigation, Search } from 'lucide-react';
+import { Bus, Clock, Navigation, Search } from 'lucide-react';
+import { ModeToggle } from '@/components/ui/ModeToggle';
 
 const Index = () => {
   const [selectedStop, setSelectedStop] = useState<TransitStop | null>(null);
@@ -27,27 +28,30 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="bg-gradient-primary text-primary-foreground shadow-elegant sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary-foreground/20 rounded-lg backdrop-blur-sm">
-                <Bus className="w-6 h-6" />
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary-foreground/20 rounded-lg backdrop-blur-sm">
+                  <Bus className="w-6 h-6" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold">Winnipeg Transit</h1>
+                  <p className="text-primary-foreground/80 text-sm">Live bus schedules & navigation</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-xl font-bold">Winnipeg Transit</h1>
-                <p className="text-primary-foreground/80 text-sm">Live bus schedules & navigation</p>
+              <div className="flex items-center gap-2">
+                <ModeToggle />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-primary-foreground hover:bg-primary-foreground/20"
+                  onClick={locateUser}
+                >
+                  <Navigation className="w-4 h-4" />
+                </Button>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-primary-foreground hover:bg-primary-foreground/20"
-              onClick={locateUser}
-            >
-              <Navigation className="w-4 h-4" />
-            </Button>
           </div>
-        </div>
       </header>
 
       <div className="container mx-auto p-4 max-w-7xl">
