@@ -85,6 +85,9 @@ export const winnipegTransitAPI = {
       const response = await fetch(
         `${API_BASE_URL}/stops.json?lat=${lat}&lon=${lng}&distance=${distance}&api-key=${API_KEY}`
       );
+      if (!response.ok) {
+        throw new Error(`Failed to fetch nearby stops: ${response.status}`);
+      }
       const data = await response.json();
       return (data.stops || []).map(normalizeStop);
     } catch (error) {
@@ -100,6 +103,9 @@ export const winnipegTransitAPI = {
       const response = await fetch(
         `${API_BASE_URL}/stops/${stopId}/schedule.json?max-results-per-route=10&start=${encodeURIComponent(now)}&api-key=${API_KEY}`
       );
+      if (!response.ok) {
+        throw new Error(`Failed to fetch stop schedule: ${response.status}`);
+      }
       const data = await response.json();
       return data["stop-schedule"] || null;
     } catch (error) {
@@ -120,12 +126,18 @@ export const winnipegTransitAPI = {
       const routeParam = opts?.route ? `&route=${encodeURIComponent(opts.route)}` : '';
       const url = `${API_BASE_URL}/stops.json?name=${encodeURIComponent(query)}${routeParam}&lat=${lat}&lon=${lon}&distance=${distance}&api-key=${API_KEY}`;
       const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to search stops: ${response.status}`);
+      }
       let data = await response.json();
       let stops: TransitStop[] = (data.stops || []).map(normalizeStop);
 
       // Fallback: broaden search if no results
       if (!stops.length) {
         const wide = await fetch(`${API_BASE_URL}/stops.json?lat=49.8951&lon=-97.1384&distance=15000${routeParam}&api-key=${API_KEY}`);
+        if (!wide.ok) {
+          throw new Error(`Failed to search stops: ${wide.status}`);
+        }
         const wideData = await wide.json();
         const all = (wideData.stops || []).map(normalizeStop);
         const q = query.toLowerCase();
@@ -147,6 +159,9 @@ export const winnipegTransitAPI = {
   async planTrip(originId: number, destId: number): Promise<TripPlan | null> {
     try {
       const response = await fetch(`${API_BASE_URL}/trips.json?origin=${originId}&destination=${destId}&api-key=${API_KEY}`);
+      if (!response.ok) {
+        throw new Error(`Failed to plan trip: ${response.status}`);
+      }
       const data = await response.json();
       const trip = data.trips?.[0];
       if (!trip) return null;
@@ -180,6 +195,9 @@ export const winnipegTransitAPI = {
       const response = await fetch(
         `${API_BASE_URL}/stops/${stopId}.json?api-key=${API_KEY}`
       );
+      if (!response.ok) {
+        throw new Error(`Failed to fetch stop: ${response.status}`);
+      }
       const data = await response.json();
       return data.stop ? normalizeStop(data.stop) : null;
     } catch (error) {
