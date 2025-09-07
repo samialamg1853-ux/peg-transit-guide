@@ -51,6 +51,7 @@ export function TransitMap({
   const stopsLayerRef = useRef<L.LayerGroup | null>(null);
   const routeLayerRef = useRef<L.LayerGroup | null>(null);
   const userMarkerRef = useRef<L.Marker | null>(null);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
   const [currentCenter, setCurrentCenter] = useState<[number, number]>([49.8951, -97.1384]); // Winnipeg center
 
@@ -77,16 +78,19 @@ export function TransitMap({
 
     mapRef.current = map;
 
-    // Ensure map sizes correctly after mount and on resize
+    // Ensure map sizes correctly after mount and when container size changes
     setTimeout(() => map.invalidateSize(), 0);
-    const onResize = () => map.invalidateSize();
-    window.addEventListener('resize', onResize);
+    const observer = new ResizeObserver(() => {
+      map.invalidateSize();
+    });
+    observer.observe(mapContainerRef.current!);
+    resizeObserverRef.current = observer;
 
     // Initial stops load
     loadNearbyStops(currentCenter[0], currentCenter[1], 2000);
 
     return () => {
-      window.removeEventListener('resize', onResize);
+      resizeObserverRef.current?.disconnect();
       map.remove();
       mapRef.current = null;
       stopsLayerRef.current = null;
