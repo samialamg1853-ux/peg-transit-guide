@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { TransitStop, StopSchedule as StopScheduleType, winnipegTransitAPI } from '@/services/winnipegtransit';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -47,7 +47,7 @@ export function StopSchedule({ stop, onClose }: StopScheduleProps) {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const fetchSchedule = async () => {
+  const fetchSchedule = useCallback(async () => {
     setLoading(true);
     try {
       const scheduleData = await winnipegTransitAPI.getStopSchedule(stop.key);
@@ -61,11 +61,13 @@ export function StopSchedule({ stop, onClose }: StopScheduleProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [stop.key, toast]);
 
   useEffect(() => {
     fetchSchedule();
-  }, [stop.key]);
+    const intervalId = setInterval(fetchSchedule, 60000);
+    return () => clearInterval(intervalId);
+  }, [fetchSchedule]);
 
   if (loading) {
     return (
